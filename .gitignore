@@ -1,0 +1,17 @@
+# need i
+bin
+bin/*
+gen/*
+gen
+.classpath
+.project
+default.*
+.settings/*
+**/.settings/*
+build.properties
+.DS_Store
+*.class
+java/build
+java/*.log
+java/*.log.*
+target/
