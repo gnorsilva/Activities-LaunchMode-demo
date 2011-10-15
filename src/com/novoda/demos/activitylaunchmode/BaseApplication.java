@@ -32,7 +32,7 @@ public class BaseApplication extends Application{
 		stack.add(activity);
 	}
 	
-	private int getCurrentTaskId() {
+	public int getCurrentTaskId() {
 		List<RunningTaskInfo> runningTasks = manager.getRunningTasks(1);
 		RunningTaskInfo runningTask = runningTasks.get(0);
 		return runningTask.id;
@@ -45,7 +45,7 @@ public class BaseApplication extends Application{
 		}
 	}
 	
-	public Stack<BaseActivity> getCurrentStack(){
+	public Stack<BaseActivity> getCurrentTask(){
 		return tasks.get(getCurrentTaskId());
 	}
 	
