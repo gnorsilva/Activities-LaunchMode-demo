@@ -2,47 +2,42 @@ package com.novoda.demos.activitylaunchmode;
 
 import java.util.Stack;
 
-import android.app.Activity;
 import android.util.Log;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
 import android.widget.TextView;
 
-public class StackInfoDisplayer implements Runnable, Constants{
-    
-    private Activity activity;
-    private TextView currentStackId;
-    private LinearLayout currentTaskView;
+public class TaskInfoDisplayer implements Runnable, Constants {
 
-    public StackInfoDisplayer(Activity activity, TextView currentStackId, LinearLayout currentTaskView){
-        this.activity = activity;
-        this.currentStackId = currentStackId;
-        this.currentTaskView = currentTaskView;
+    private final BaseApplication app;
+    private final TextView taskIdField;
+    private final LinearLayout taskView;
+
+    public TaskInfoDisplayer(BaseActivity baseActivity) {
+        app = (BaseApplication) baseActivity.getApplication();
+        taskIdField = (TextView) baseActivity.findViewById(R.id.task_id_field);
+        taskView = (LinearLayout) baseActivity.findViewById(R.id.task_view);
+        taskView.removeAllViews();
     }
-    
+
     @Override
     public void run() {
         Log.v(LOG_TAG, "===============================");
-        BaseApplication app = (BaseApplication) activity.getApplication();
-        showCurrentTaskInfo(app);
+        showCurrentTaskId();
+        showCurrentTaskActivites();
         Log.v(LOG_TAG, "===============================");
     }
 
-    private void showCurrentTaskInfo(BaseApplication app) {
+    private void showCurrentTaskId() {
         int taskId = app.getCurrentTaskId();
-        showCurrentTaskId(taskId);
-        Stack<BaseActivity> task = app.getCurrentTask();
-        showCurrentTaskActivites(task);
-    }
-    
-    private void showCurrentTaskId(int taskId) {
         String taskMessage = "Activities in current task (id: " + taskId + ")";
-        currentStackId.setText("Task id: " + taskId);
+        taskIdField.setText("Task id: " + taskId);
         Log.v(LOG_TAG, taskMessage);
     }
 
-    private void showCurrentTaskActivites(Stack<BaseActivity> task) {
+    private void showCurrentTaskActivites() {
+        Stack<BaseActivity> task = app.getCurrentTask();
         for (int location = task.size() - 1; location >= 0; location--) {
             BaseActivity activity = task.get(location);
             showActivityDetails(activity);
@@ -53,7 +48,7 @@ public class StackInfoDisplayer implements Runnable, Constants{
         String activityName = activity.getClass().getSimpleName();
         Log.v(LOG_TAG, activityName);
         ImageView activityRepresentation = getActivityRepresentation(activity);
-        currentTaskView.addView(activityRepresentation);
+        taskView.addView(activityRepresentation);
     }
 
     private ImageView getActivityRepresentation(BaseActivity activity) {

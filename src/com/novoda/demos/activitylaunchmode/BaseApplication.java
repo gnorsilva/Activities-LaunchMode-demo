@@ -49,8 +49,8 @@ public class BaseApplication extends Application{
 		return tasks.get(getCurrentTaskId());
 	}
 	
-	public void setIntentFilterMode(boolean mode){
-		intentFilterMode = mode;
+	public void toggleIntentFilterMode(){
+		intentFilterMode = !intentFilterMode;
 	}
 	
 	public boolean isIntentFilterMode(){

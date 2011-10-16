@@ -14,11 +14,12 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 public abstract class BaseActivity extends Activity implements Constants {
 
+    private final int DISPLAY_STACK_DELAY = 500;
+    
     private String[] intentFlagsText = { "CLEAR_TOP", "CLEAR_WHEN_TASK_RESET", "EXCLUDE_FROM_RECENTS",
             "FORWARD_RESULT", "MULTIPLE_TASK", "NEW_TASK", "NO_HISTORY", "NO_USER_ACTION", "PREVIOUS_IS_TOP",
             "REORDER_TO_FRONT", "RESET_TASK_IF_NEEDED", "SINGLE_TOP" };
@@ -30,50 +31,39 @@ public abstract class BaseActivity extends Activity implements Constants {
             Intent.FLAG_ACTIVITY_REORDER_TO_FRONT, Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED,
             Intent.FLAG_ACTIVITY_SINGLE_TOP };
 
-    private int chosenFlags;
-
-    private final int DISPLAY_STACK_DELAY = 500;
-
     private TextView lifecycle;
-
     private StringBuilder lifecycleFlow = new StringBuilder();
-
     private Handler handler = new Handler();
+    private BaseApplication app;
 
-    private LinearLayout currentTaskView;
-
-    private TextView currentStackId;
-
-    private void log() {
-        Thread current = Thread.currentThread();
-        StackTraceElement trace = current.getStackTrace()[3];
-        String method = trace.getMethodName();
-        Log.v(LOG_TAG, getLaunchMode() + ": " + method);
-        lifecycleFlow.append(method).append("\n");
+    private int chosenFlags;
+    
+    private void logMethodName() {
+        String methodName = getMethodName();
+        Log.v(LOG_TAG, getLaunchMode() + ": " + methodName);
+        lifecycleFlow.append(methodName).append("\n");
         if (lifecycle != null) {
             lifecycle.setText(lifecycleFlow.toString());
         }
     }
 
+    private String getMethodName() {
+        Thread current = Thread.currentThread();
+        StackTraceElement trace = current.getStackTrace()[4];
+        return trace.getMethodName();
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        log();
+        logMethodName();
         setContentView(R.layout.main);
-        setupViewWidgets();
-        addToStack();
+        setupView();
+        app = (BaseApplication) getApplication();
+        app.pushToStack(this);
     }
-
-    @Override
-    protected void onResume() {
-        log();
-        currentTaskView.removeAllViews();
-        Runnable stackInfoDisplayer = new StackInfoDisplayer(this, currentStackId, currentTaskView);
-        handler.postDelayed(stackInfoDisplayer, DISPLAY_STACK_DELAY);
-        super.onResume();
-    }
-
-    private void setupViewWidgets() {
+    
+    private void setupView() {
         View activityLayout = findViewById(R.id.main_layout);
         activityLayout.setBackgroundResource(getBackgroundColour());
         TextView header = (TextView) findViewById(R.id.header);
@@ -81,18 +71,14 @@ public abstract class BaseActivity extends Activity implements Constants {
         header.setText(launchMode);
         lifecycle = (TextView) findViewById(R.id.lifecycle_content);
         lifecycle.setMovementMethod(new ScrollingMovementMethod());
-        currentTaskView = (LinearLayout) findViewById(R.id.current_stack_view);
-        currentStackId = (TextView) findViewById(R.id.current_stack_id);
     }
-
-    private void addToStack() {
-        BaseApplication app = (BaseApplication) getApplication();
-        app.pushToStack(this);
-    }
-
-    private void removeFromStack() {
-        BaseApplication app = (BaseApplication) getApplication();
-        app.removeFromStack(this);
+    
+    @Override
+    protected void onResume() {
+        logMethodName();
+        Runnable taskInfoDisplayer = new TaskInfoDisplayer(this);
+        handler.postDelayed(taskInfoDisplayer, DISPLAY_STACK_DELAY);
+        super.onResume();
     }
 
     private String getLaunchMode() {
@@ -100,7 +86,7 @@ public abstract class BaseActivity extends Activity implements Constants {
     }
 
     public void generalOnClick(View v) {
-        if (isIntentFilterMode()) {
+        if (app.isIntentFilterMode()) {
             showIntentFilterDialog(v);
         } else {
             startActivity(getNextIntent(v));
@@ -109,17 +95,18 @@ public abstract class BaseActivity extends Activity implements Constants {
 
     private void showIntentFilterDialog(final View nextActivityBtn) {
         chosenFlags = 0;
-        final Builder build = new Builder(this);
-        build.setTitle("List selection");
-        build.setCancelable(true);
+        Builder builder = new Builder(this);
+        prepareIntentFiltedDialog(builder);
+        builder.setTitle("List selection");
+        builder.setCancelable(true);
         final OnMultiChoiceClickListener onClick = new OnMultiChoiceClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which, boolean isChecked) {
                 chosenFlags |= intentFlags[which];
             }
         };
-        build.setMultiChoiceItems(intentFlagsText, null, onClick);
-        build.setPositiveButton("Done", new OnClickListener() {
+        builder.setMultiChoiceItems(intentFlagsText, null, onClick);
+        builder.setPositiveButton("Done", new OnClickListener() {
             @Override
             public void onClick(final DialogInterface dialog, final int which) {
                 Intent intent = getNextIntent(nextActivityBtn);
@@ -127,17 +114,10 @@ public abstract class BaseActivity extends Activity implements Constants {
                 startActivity(intent);
             }
         });
-        build.show();
+        builder.show();
     }
 
-    private boolean isIntentFilterMode() {
-        BaseApplication app = (BaseApplication) getApplication();
-        return app.isIntentFilterMode();
-    }
-
-    private void setIntentFilterMode(boolean mode) {
-        BaseApplication app = (BaseApplication) getApplication();
-        app.setIntentFilterMode(mode);
+    private void prepareIntentFiltedDialog(Builder build) {
     }
 
     private Intent getNextIntent(View v) {
@@ -161,7 +141,7 @@ public abstract class BaseActivity extends Activity implements Constants {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        log();
+        logMethodName();
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.base_activity, menu);
         return true;
@@ -169,19 +149,19 @@ public abstract class BaseActivity extends Activity implements Constants {
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        log();
+        logMethodName();
         MenuItem filterOption = menu.findItem(R.id.menuitem_intentfilter_mode);
-        String title = "Turn " + (isIntentFilterMode() ? "off" : "on") + " IntentFilter mode";
+        String title = "Turn IntentFilter mode " + (app.isIntentFilterMode() ? "OFF" : "ON");
         filterOption.setTitle(title);
         return super.onPrepareOptionsMenu(menu);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        log();
+        logMethodName();
         switch (item.getItemId()) {
         case R.id.menuitem_intentfilter_mode:
-            setIntentFilterMode(!isIntentFilterMode());
+            app.toggleIntentFilterMode();
             return true;
         default:
             return super.onOptionsItemSelected(item);
@@ -192,74 +172,74 @@ public abstract class BaseActivity extends Activity implements Constants {
 
     @Override
     public void onContentChanged() {
-        log();
+        logMethodName();
         super.onContentChanged();
     }
 
     @Override
     protected void onDestroy() {
-        log();
-        removeFromStack();
+        logMethodName();
+        app.removeFromStack(this);
         super.onDestroy();
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
-        log();
+        logMethodName();
         super.onNewIntent(intent);
     }
 
     @Override
     protected void onPause() {
-        log();
+        logMethodName();
         super.onPause();
     }
 
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
-        log();
+        logMethodName();
         super.onPostCreate(savedInstanceState);
     }
 
     @Override
     protected void onPostResume() {
-        log();
+        logMethodName();
         super.onPostResume();
     }
 
     @Override
     protected void onRestart() {
-        log();
+        logMethodName();
         super.onRestart();
     }
 
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        log();
+        logMethodName();
         super.onRestoreInstanceState(savedInstanceState);
     }
 
     @Override
     public Object onRetainNonConfigurationInstance() {
-        log();
+        logMethodName();
         return super.onRetainNonConfigurationInstance();
     }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-        log();
+        logMethodName();
         super.onSaveInstanceState(outState);
     }
 
     @Override
     protected void onStart() {
-        log();
+        logMethodName();
         super.onStart();
     }
 
     @Override
     protected void onStop() {
-        log();
+        logMethodName();
         super.onStop();
     }
 

@@ -42,7 +42,8 @@
       android:layout_width="fill_parent"
       android:layout_height="wrap_content"
       android:layout_gravity="top"
-      android:id="@+id/current_stack_id"
+      android:id="@+id/task_id_field"
+      android:textColor="#333333"
       android:padding="3dp" />
 
     <LinearLayout
@@ -50,7 +51,7 @@
       android:layout_height="fill_parent"
       android:gravity="bottom"
       android:orientation="vertical"
-      android:id="@+id/current_stack_view" />
+      android:id="@+id/task_view" />
       
   </LinearLayout>
 
