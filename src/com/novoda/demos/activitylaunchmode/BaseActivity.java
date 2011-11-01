@@ -18,7 +18,7 @@ import android.widget.TextView;
 
 public abstract class BaseActivity extends Activity implements Constants {
 
-    private final int DISPLAY_STACK_DELAY = 500;
+	private final int DISPLAY_STACK_DELAY = 500;
     
     private String[] intentFlagsText = { "CLEAR_TOP", "CLEAR_WHEN_TASK_RESET", "EXCLUDE_FROM_RECENTS",
             "FORWARD_RESULT", "MULTIPLE_TASK", "NEW_TASK", "NO_HISTORY", "NO_USER_ACTION", "PREVIOUS_IS_TOP",
@@ -76,12 +76,26 @@ public abstract class BaseActivity extends Activity implements Constants {
     @Override
     protected void onResume() {
         logMethodName();
+        checkIfReorderToFront();
         Runnable taskInfoDisplayer = new TaskInfoDisplayer(this);
         handler.postDelayed(taskInfoDisplayer, DISPLAY_STACK_DELAY);
         super.onResume();
     }
 
-    private String getLaunchMode() {
+    private void checkIfReorderToFront() {
+    	Intent intent = getIntent();
+    	if (shouldReorderToFront(intent)){
+    		app.removeFromStack(this);
+    		app.pushToStack(this);
+    	}
+	}
+
+	private boolean shouldReorderToFront(Intent intent) {
+		int flags = intent.getFlags();
+		return (flags & Intent.FLAG_ACTIVITY_REORDER_TO_FRONT) > 0;
+	}
+
+	private String getLaunchMode() {
         return "[" + hashCode() + "] " + getClass().getSimpleName();
     }
 
@@ -102,7 +116,7 @@ public abstract class BaseActivity extends Activity implements Constants {
         final OnMultiChoiceClickListener onClick = new OnMultiChoiceClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which, boolean isChecked) {
-                chosenFlags |= intentFlags[which];
+				chosenFlags |= intentFlags[which];
             }
         };
         builder.setMultiChoiceItems(intentFlagsText, null, onClick);
@@ -168,8 +182,6 @@ public abstract class BaseActivity extends Activity implements Constants {
         }
     }
 
-    public abstract int getBackgroundColour();
-
     @Override
     public void onContentChanged() {
         logMethodName();
@@ -184,9 +196,10 @@ public abstract class BaseActivity extends Activity implements Constants {
     }
 
     @Override
-    protected void onNewIntent(Intent intent) {
+    protected void onNewIntent(Intent newIntent) {
         logMethodName();
-        super.onNewIntent(intent);
+        super.onNewIntent(newIntent);
+        setIntent(newIntent);
     }
 
     @Override
@@ -243,4 +256,6 @@ public abstract class BaseActivity extends Activity implements Constants {
         super.onStop();
     }
 
+    public abstract int getBackgroundColour();
+    
 }
