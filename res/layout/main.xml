@@ -62,7 +62,8 @@
     android:onClick="generalOnClick"
     android:id="@+id/btn_standard"
     android:text="standard"
-    android:textColor="@color/green" />
+    android:textColor="@color/green"
+   	android:background="@drawable/btn_default" />
 
   <Button
     android:layout_width="fill_parent"
@@ -70,6 +71,7 @@
     android:layout_above="@+id/btn_singletask"
     android:onClick="generalOnClick"
     android:id="@+id/btn_singletop"
+    android:background="@drawable/btn_default"
     android:text="singleTop"
     android:textColor="@color/blue" />
 
@@ -79,6 +81,7 @@
     android:layout_above="@+id/btn_singleInstance"
     android:onClick="generalOnClick"
     android:id="@+id/btn_singletask"
+    android:background="@drawable/btn_default"
     android:text="singleTask"
     android:textColor="#ff6600" />
 
@@ -88,6 +91,7 @@
     android:layout_alignParentBottom="true"
     android:onClick="generalOnClick"
     android:id="@+id/btn_singleInstance"
+    android:background="@drawable/btn_default"
     android:text="singleInstance"
     android:textColor="@color/red" />
 
